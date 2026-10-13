@@ -103,6 +103,8 @@
 .form-field textarea { resize: vertical; min-height: 130px; }
 .form-submit { width: 100%; }
 .form-notice { margin-top: 18px; font-size: 16px; line-height: 1.6; color: var(--primary); }
+.form-notice.is-success { background: oklch(0.96 0.04 145); border: 1px solid oklch(0.82 0.1 145); border-radius: 12px; padding: 16px 20px; color: oklch(0.32 0.12 145); display: grid; gap: 12px; }
+.form-notice.is-error { background: oklch(0.96 0.04 25); border: 1px solid oklch(0.85 0.1 25); border-radius: 12px; padding: 16px 20px; color: oklch(0.4 0.15 25); }
 .footer { background: var(--secondary); color: var(--secondary-foreground); padding: 64px 0 28px; }
 .footer-grid { display: grid; grid-template-columns: 1.2fr 1fr .6fr; gap: 72px; padding-bottom: 48px; }
 .footer .brand { color: var(--primary-foreground); }

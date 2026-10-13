@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, ChevronDown, Feather, Instagram, MapPin, Menu, MessageCircle, Minimize, Phone, ShieldCheck, X } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ChevronDown, Feather, Instagram, Loader2, MapPin, Menu, MessageCircle, Minimize, Phone, ShieldCheck, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { submitOrderToSheets } from '@/lib/google-sheets';
 import { faqs, products, WHATSAPP_URL } from '@/lib/storefront';
 import minisoccer from '@/assets/minisoccer.jpg';
 import futsal from '@/assets/futsal.jpg';
@@ -59,13 +60,190 @@ export function FAQSection() {
 }
 
 export function OrderForm() {
+  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  const [orderData, setOrderData] = useState<{
+    orderId: string;
+    customerName: string;
+    productName: string;
+    phone: string;
+  } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    // TODO: Connect to webhook later
-    setSubmitted(true);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    const customerName = String(formData.get('name') ?? '').trim();
+    const customerPhone = String(formData.get('phone') ?? '').trim();
+    const productName = String(formData.get('product') ?? '');
+    const size = String(formData.get('size') ?? '').trim();
+    const quantity = Number(formData.get('quantity')) || 1;
+    const notes = String(formData.get('notes') ?? '').trim();
+
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await submitOrderToSheets({
+        customerName,
+        customerPhone,
+        productName,
+        size: size || undefined,
+        quantity,
+        notes: notes || undefined,
+      });
+
+      if (response.success && response.data) {
+        setSubmitted(true);
+        setOrderData({
+          orderId: response.data.orderId,
+          customerName,
+          productName,
+          phone: customerPhone,
+        });
+        form.reset();
+      } else {
+        setSubmitted(true);
+        setErrorMessage(response.error || 'Gagal menyimpan pesanan ke Google Sheets.');
+      }
+    } catch (err) {
+      setSubmitted(true);
+      setErrorMessage(err instanceof Error ? err.message : 'Terjadi kendala saat mengirim data ke Google Sheets.');
+    } finally {
+      setLoading(false);
+    }
   }
-  return <section className="section" id="pesanan"><div className="container"><SectionHeading title="Formulir Pesanan" subtitle="Isi data di bawah ini, Kak. Nanti admin kami akan memproses pesanan Kakak. Terimakasih!" /><form className="order-form" onSubmit={onSubmit}><div className="form-field"><label htmlFor="name">Nama Lengkap Kakak</label><input id="name" name="name" placeholder="Misal: Budi Santoso" autoComplete="name" required /></div><div className="form-grid"><div className="form-field"><label htmlFor="product">Pilih Produk</label><select id="product" name="product" required defaultValue=""><option value="" disabled>-- Pilih Sepatu --</option>{products.filter(product => product.price !== null).map(product => <option key={product.name} value={product.name}>{product.name}</option>)}</select></div><div className="form-field"><label htmlFor="quantity">Jumlah</label><input id="quantity" name="quantity" type="number" placeholder="1" defaultValue={1} min={1} required /></div></div><div className="form-field"><label htmlFor="notes">Catatan Tambahan (opsional)</label><textarea id="notes" name="notes" /></div><Button type="submit" variant="order" className="form-submit"><MessageCircle />Kirim ke WhatsApp</Button>{submitted && <p role="status" className="form-notice">Pesanan belum terkirim, Kak. Silakan hubungi kami langsung via WhatsApp. Terimakasih!</p>}</form></div></section>;
+
+  const successWaUrl = orderData
+    ? `https://wa.me/6289652914048?text=${encodeURIComponent(
+        `Halo LocalMart, saya ${orderData.customerName} sudah memesan ${orderData.productName} via website dengan No. Pesanan ${orderData.orderId}. Mohon diproses ya Kak. Terimakasih!`
+      )}`
+    : WHATSAPP_URL;
+
+  return (
+    <section className="section" id="pesanan">
+      <div className="container">
+        <SectionHeading
+          title="Formulir Pesanan"
+          subtitle="Isi data di bawah ini, Kak. Pesanan akan otomatis tercatat ke sistem dan dapat langsung dikonfirmasi via WhatsApp. Terimakasih!"
+        />
+        <form className="order-form" onSubmit={onSubmit}>
+          <div className="form-field">
+            <label htmlFor="name">Nama Lengkap Kakak</label>
+            <input
+              id="name"
+              name="name"
+              placeholder="Misal: Budi Santoso"
+              autoComplete="name"
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="phone">Nomor WhatsApp Kakak</label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              placeholder="Misal: 0896-5291-4049"
+              autoComplete="tel"
+              required
+            />
+          </div>
+
+          <div className="form-grid">
+            <div className="form-field">
+              <label htmlFor="product">Pilih Produk</label>
+              <select id="product" name="product" required defaultValue="">
+                <option value="" disabled>-- Pilih Sepatu --</option>
+                {products
+                  .filter((product) => product.price !== null)
+                  .map((product) => (
+                    <option key={product.name} value={product.name}>
+                      {product.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div className="form-field">
+              <label htmlFor="size">Ukuran (Size)</label>
+              <input id="size" name="size" placeholder="Misal: 42" />
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="quantity">Jumlah</label>
+            <input
+              id="quantity"
+              name="quantity"
+              type="number"
+              placeholder="1"
+              defaultValue={1}
+              min={1}
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="notes">Catatan Tambahan (opsional)</label>
+            <textarea
+              id="notes"
+              name="notes"
+              placeholder="Alamat pengiriman / catatan lainnya..."
+            />
+          </div>
+
+          <Button type="submit" variant="order" className="form-submit" disabled={loading}>
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin" />
+                Menyimpan Pesanan...
+              </>
+            ) : (
+              <>
+                <MessageCircle />
+                Kirim Pesanan
+              </>
+            )}
+          </Button>
+
+          {submitted && orderData && (
+            <div role="status" className="form-notice is-success">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                <CheckCircle2 size={20} />
+                <span>Pesanan Berhasil Dicatat ke Sistem!</span>
+              </div>
+              <p style={{ margin: 0 }}>
+                Nomor Pesanan: <strong>{orderData.orderId}</strong>. Data Kakak telah tersimpan di Google Sheets. Silakan konfirmasi pesanan ke admin melalui tautan di bawah ini:
+              </p>
+              <Button variant="whatsapp" asChild style={{ marginTop: '4px' }}>
+                <a href={successWaUrl} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle size={18} />
+                  Konfirmasi via WhatsApp Sekarang
+                </a>
+              </Button>
+            </div>
+          )}
+
+          {submitted && errorMessage && (
+            <div role="status" className="form-notice is-error">
+              <p style={{ margin: '0 0 10px 0' }}>
+                Pesanan belum tercatat otomatis ({errorMessage}), Kak. Silakan hubungi kami langsung via WhatsApp untuk pemesanan manual. Terimakasih!
+              </p>
+              <Button variant="whatsapp" asChild>
+                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle size={18} />
+                  Hubungi via WhatsApp
+                </a>
+              </Button>
+            </div>
+          )}
+        </form>
+      </div>
+    </section>
+  );
 }
 
 export function Footer() {
