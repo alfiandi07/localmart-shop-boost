@@ -10,18 +10,12 @@
  *   4. Inquiries  - Pertanyaan / konsultasi pelanggan
  * 
  * PANDUAN PEMASANGAN:
- * 1. Buka spreadsheet Google Sheets baru (misal: "Database LocalMart").
+ * 1. Buka spreadsheet Google Sheets Anda (misal: "Database LocalMart").
  * 2. Klik menu 'Extensions' (Ekstensi) > 'Apps Script'.
  * 3. Hapus kode lama, lalu salin dan tempelkan seluruh isi file ini.
- * 4. Jalankan fungsi 'setupDatabase' sekali dari dropdown fungsi untuk membuat
- *    semua tabel dan header otomatis.
- * 5. Klik 'Deploy' (Terapkan) > 'New deployment' (Penerapan baru).
- * 6. Pilih jenis: 'Web app' (Aplikasi web).
- * 7. Konfigurasi:
- *    - Description: "LocalMart API v1"
- *    - Execute as: "Me" (Saya)
- *    - Who has access: "Anyone" (Siapa saja)
- * 8. Salin URL Web App yang dihasilkan untuk digunakan di aplikasi LocalMart.
+ * 4. Jalankan fungsi 'setupDatabase' (atau 'setupCustomersTable') dari dropdown fungsi
+ *    untuk membuat semua tabel, header, dan data awal secara otomatis.
+ * 5. Klik 'Deploy' (Terapkan) > 'Manage deployments' > Edit > New version > Deploy.
  * ============================================================================
  */
 
@@ -32,8 +26,8 @@ var SHEET_CUSTOMERS = "Customers";
 var SHEET_INQUIRIES = "Inquiries";
 
 /**
- * Inisialisasi struktur sheet dan header kolom secara otomatis.
- * Jalankan fungsi ini pertama kali di Apps Script editor.
+ * Inisialisasi struktur sheet, header kolom, dan data database awal.
+ * Jalankan fungsi ini di Apps Script editor untuk membuat semua tabel.
  */
 function setupDatabase() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -72,7 +66,7 @@ function setupDatabase() {
   ];
   var productSheet = setupSheet(ss, SHEET_PRODUCTS, productHeaders);
   
-  // Isi data katalog awal jika masih kosong
+  // Isi data katalog produk awal jika masih kosong
   if (productSheet.getLastRow() === 1) {
     productSheet.appendRow([
       "PRD-001",
@@ -109,19 +103,8 @@ function setupDatabase() {
     ]);
   }
 
-  // 3. Setup Sheet: Customers
-  var customerHeaders = [
-    "Customer ID",
-    "Nama",
-    "No WhatsApp",
-    "Kota",
-    "Alamat",
-    "Total Pesanan",
-    "Total Belanja (IDR)",
-    "Transaksi Terakhir",
-    "Terdaftar Sejak"
-  ];
-  setupSheet(ss, SHEET_CUSTOMERS, customerHeaders);
+  // 3. Setup Sheet: Customers (dengan data master awal)
+  setupCustomersTable();
 
   // 4. Setup Sheet: Inquiries
   var inquiryHeaders = [
@@ -139,6 +122,71 @@ function setupDatabase() {
 }
 
 /**
+ * Khusus untuk membuat tabel Customers dan mengisi data awal pelanggan.
+ * Dapat dijalankan langsung dari dropdown fungsi di Apps Script.
+ */
+function setupCustomersTable() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var customerHeaders = [
+    "Customer ID",
+    "Nama",
+    "No WhatsApp",
+    "Kota",
+    "Alamat",
+    "Total Pesanan",
+    "Total Belanja (IDR)",
+    "Transaksi Terakhir",
+    "Terdaftar Sejak"
+  ];
+  var customerSheet = setupSheet(ss, SHEET_CUSTOMERS, customerHeaders);
+
+  // Jika tabel Customers masih kosong (hanya ada baris header)
+  if (customerSheet.getLastRow() === 1) {
+    var now = Utilities.formatDate(new Date(), "Asia/Jakarta", "yyyy-MM-dd HH:mm:ss");
+
+    customerSheet.appendRow([
+      "CUST-0001",
+      "Budi Santoso",
+      "6289652914049",
+      "Jakarta Pusat",
+      "Jl. Kemayoran Ketapang No. 12, Jakarta Pusat",
+      2,
+      400000,
+      now,
+      now
+    ]);
+    customerSheet.appendRow([
+      "CUST-0002",
+      "Dimas Pratama",
+      "6281234567890",
+      "Jakarta Selatan",
+      "Jl. Fatmawati No. 45, Jakarta Selatan",
+      1,
+      210000,
+      now,
+      now
+    ]);
+    customerSheet.appendRow([
+      "CUST-0003",
+      "Rizky Ramadhan",
+      "6285712345678",
+      "Jakarta Barat",
+      "Jl. Tanjung Duren Raya No. 8, Jakarta Barat",
+      3,
+      590000,
+      now,
+      now
+    ]);
+
+    Logger.log("Tabel Customers berhasil dibuat dan diisi data awal.");
+  } else {
+    Logger.log("Tabel Customers sudah memiliki data (" + (customerSheet.getLastRow() - 1) + " baris).");
+  }
+
+  return customerSheet;
+}
+
+/**
  * Helper untuk membuat sheet baru jika belum ada dan memformat header
  */
 function setupSheet(ss, sheetName, headers) {
@@ -151,7 +199,6 @@ function setupSheet(ss, sheetName, headers) {
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(headers);
   } else {
-    // Pastikan header di baris 1 sesuai
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   }
 
@@ -181,9 +228,14 @@ function doPost(e) {
       result = handleCreateOrder(payload);
     } else if (action === "CREATE_INQUIRY") {
       result = handleCreateInquiry(payload);
+    } else if (action === "CREATE_CUSTOMER") {
+      result = handleCreateCustomer(payload);
     } else if (action === "SETUP_DATABASE") {
       setupDatabase();
       result = { message: "Database setup completed successfully." };
+    } else if (action === "SETUP_CUSTOMERS") {
+      setupCustomersTable();
+      result = { message: "Customers table setup completed successfully." };
     } else {
       throw new Error("Action tidak dikenali: " + action);
     }
@@ -201,7 +253,7 @@ function doPost(e) {
 }
 
 /**
- * Handler HTTP GET (Mengambil data produk atau status pesanan)
+ * Handler HTTP GET (Mengambil data produk, customer, atau status pesanan)
  */
 function doGet(e) {
   try {
@@ -211,12 +263,16 @@ function doGet(e) {
     var result;
     if (action === "GET_PRODUCTS") {
       result = handleGetProducts();
+    } else if (action === "GET_CUSTOMERS") {
+      result = handleGetCustomers();
+    } else if (action === "GET_CUSTOMER_BY_PHONE") {
+      result = handleGetCustomerByPhone(params.phone);
     } else if (action === "GET_ORDER_STATUS") {
       result = handleGetOrderStatus(params.orderId || params.id);
     } else {
       result = {
         name: "LocalMart Google Sheets API",
-        version: "1.0.0",
+        version: "1.1.0",
         status: "ONLINE",
         timestamp: new Date().toISOString()
       };
@@ -235,7 +291,7 @@ function doGet(e) {
 }
 
 /**
- * Proses pembuatan pesanan baru (Orders & Customers upsert)
+ * Proses pembuatan pesanan baru (Orders & Customers auto-update)
  */
 function handleCreateOrder(payload) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -316,6 +372,95 @@ function handleCreateOrder(payload) {
 }
 
 /**
+ * Mengambil seluruh data pelanggan dari sheet Customers
+ */
+function handleGetCustomers() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_CUSTOMERS);
+  if (!sheet) {
+    sheet = setupCustomersTable();
+  }
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+
+  var customers = [];
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    customers.push({
+      customerId: row[0],
+      name: row[1],
+      phone: String(row[2]),
+      city: row[3] || "-",
+      address: row[4] || "-",
+      totalOrders: Number(row[5]) || 0,
+      totalSpent: Number(row[6]) || 0,
+      lastOrderDate: row[7],
+      firstRegistered: row[8]
+    });
+  }
+
+  return customers;
+}
+
+/**
+ * Mencari data pelanggan berdasarkan nomor WhatsApp
+ */
+function handleGetCustomerByPhone(phone) {
+  if (!phone) throw new Error("Parameter nomor telepon / WhatsApp wajib diisi.");
+
+  var normalized = normalizePhoneNumber(phone);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_CUSTOMERS);
+  if (!sheet) throw new Error("Tabel Customers tidak ditemukan.");
+
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    if (normalizePhoneNumber(row[2]) === normalized) {
+      return {
+        customerId: row[0],
+        name: row[1],
+        phone: String(row[2]),
+        city: row[3],
+        address: row[4],
+        totalOrders: Number(row[5]) || 0,
+        totalSpent: Number(row[6]) || 0,
+        lastOrderDate: row[7],
+        firstRegistered: row[8]
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Membuat data pelanggan baru secara manual via API
+ */
+function handleCreateCustomer(payload) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var name = (payload.name || "").trim();
+  var phone = normalizePhoneNumber(payload.phone || "");
+  var city = payload.city || "-";
+  var address = payload.address || "-";
+
+  if (!name || !phone) {
+    throw new Error("Nama dan nomor WhatsApp wajib diisi.");
+  }
+
+  var now = Utilities.formatDate(new Date(), "Asia/Jakarta", "yyyy-MM-dd HH:mm:ss");
+  return upsertCustomer(ss, {
+    name: name,
+    phone: phone,
+    city: city,
+    address: address,
+    totalSpent: Number(payload.totalSpent) || 0,
+    timestamp: now
+  });
+}
+
+/**
  * Proses penyimpanan formulir konsultasi / pesan (Inquiries)
  */
 function handleCreateInquiry(payload) {
@@ -369,7 +514,6 @@ function handleGetProducts() {
   if (data.length <= 1) return [];
 
   var products = [];
-  // Baris 0 adalah header, mulai dari baris 1
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     var status = String(row[8] || "").toUpperCase();
@@ -442,13 +586,15 @@ function findProductPrice(productSheet, productName) {
  */
 function upsertCustomer(ss, custData) {
   var sheet = ss.getSheetByName(SHEET_CUSTOMERS);
-  if (!sheet) return;
+  if (!sheet) {
+    sheet = setupCustomersTable();
+  }
 
   var data = sheet.getDataRange().getValues();
   var foundRow = -1;
 
   for (var i = 1; i < data.length; i++) {
-    if (String(data[i][2]).trim() === custData.phone.trim()) {
+    if (normalizePhoneNumber(data[i][2]) === normalizePhoneNumber(custData.phone)) {
       foundRow = i + 1; // 1-based index untuk getRange
       break;
     }
@@ -462,20 +608,37 @@ function upsertCustomer(ss, custData) {
     sheet.getRange(foundRow, 6).setValue(currentOrders + 1);
     sheet.getRange(foundRow, 7).setValue(currentSpent + custData.totalSpent);
     sheet.getRange(foundRow, 8).setValue(custData.timestamp);
+
+    return {
+      customerId: sheet.getRange(foundRow, 1).getValue(),
+      name: sheet.getRange(foundRow, 2).getValue(),
+      phone: custData.phone,
+      totalOrders: currentOrders + 1,
+      totalSpent: currentSpent + custData.totalSpent
+    };
   } else {
     // Customer baru: generate ID CUST-XXXX dan tambahkan baris baru
     var custId = "CUST-" + ("0000" + sheet.getLastRow()).slice(-4);
-    sheet.appendRow([
+    var newRow = [
       custId,
       custData.name,
       custData.phone,
-      custData.city,
-      "", // alamat detil
+      custData.city || "-",
+      custData.address || "-",
       1,
-      custData.totalSpent,
+      custData.totalSpent || 0,
       custData.timestamp,
       custData.timestamp
-    ]);
+    ];
+    sheet.appendRow(newRow);
+
+    return {
+      customerId: custId,
+      name: custData.name,
+      phone: custData.phone,
+      totalOrders: 1,
+      totalSpent: custData.totalSpent || 0
+    };
   }
 }
 
@@ -499,7 +662,6 @@ function parseRequestBody(e) {
     try {
       return JSON.parse(e.postData.contents);
     } catch (err) {
-      // Jika dikirim sebagai text atau query params
       return e.parameter || {};
     }
   }

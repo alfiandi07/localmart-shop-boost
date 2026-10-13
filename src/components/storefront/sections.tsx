@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { ArrowRight, CheckCircle2, ChevronDown, Feather, Instagram, Loader2, MapPin, Menu, MessageCircle, Minimize, Phone, ShieldCheck, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { submitOrderToSheets } from '@/lib/google-sheets';
+import { submitOrderToSupabase, isSupabaseConfigured } from '@/lib/supabase';
 import { faqs, products, WHATSAPP_URL } from '@/lib/storefront';
 import minisoccer from '@/assets/minisoccer.jpg';
 import futsal from '@/assets/futsal.jpg';
@@ -86,31 +87,69 @@ export function OrderForm() {
     setErrorMessage(null);
 
     try {
-      const response = await submitOrderToSheets({
-        customerName,
-        customerPhone,
-        productName,
-        size: size || undefined,
-        quantity,
-        notes: notes || undefined,
-      });
+      let orderId = '';
+      let isSuccess = false;
 
-      if (response.success && response.data) {
+      // 1. Coba simpan ke Supabase terlebih dahulu
+      if (isSupabaseConfigured()) {
+        const supaRes = await submitOrderToSupabase({
+          customerName,
+          customerPhone,
+          productName,
+          size: size || undefined,
+          quantity,
+          notes: notes || undefined,
+        });
+
+        if (supaRes.success && supaRes.data) {
+          orderId = supaRes.data.orderId;
+          isSuccess = true;
+          // Sync backup ke Google Sheets di background
+          submitOrderToSheets({
+            customerName,
+            customerPhone,
+            productName,
+            size: size || undefined,
+            quantity,
+            notes: notes || undefined,
+          }).catch(() => {});
+        }
+      }
+
+      // 2. Jika Supabase belum di-setup tabelnya atau gagal, gunakan Google Sheets
+      if (!isSuccess) {
+        const sheetsRes = await submitOrderToSheets({
+          customerName,
+          customerPhone,
+          productName,
+          size: size || undefined,
+          quantity,
+          notes: notes || undefined,
+        });
+
+        if (sheetsRes.success && sheetsRes.data) {
+          orderId = sheetsRes.data.orderId;
+          isSuccess = true;
+        } else {
+          setSubmitted(true);
+          setErrorMessage(sheetsRes.error || 'Gagal menyimpan pesanan.');
+          return;
+        }
+      }
+
+      if (isSuccess && orderId) {
         setSubmitted(true);
         setOrderData({
-          orderId: response.data.orderId,
+          orderId,
           customerName,
           productName,
           phone: customerPhone,
         });
         form.reset();
-      } else {
-        setSubmitted(true);
-        setErrorMessage(response.error || 'Gagal menyimpan pesanan ke Google Sheets.');
       }
     } catch (err) {
       setSubmitted(true);
-      setErrorMessage(err instanceof Error ? err.message : 'Terjadi kendala saat mengirim data ke Google Sheets.');
+      setErrorMessage(err instanceof Error ? err.message : 'Terjadi kendala saat memproses pesanan.');
     } finally {
       setLoading(false);
     }

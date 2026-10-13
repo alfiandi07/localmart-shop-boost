@@ -6,13 +6,19 @@ import {
   CreateInquiryInputSchema,
   type Order,
   type Product,
+  type Customer,
 } from '@/types/database';
 
 /**
- * URL Google Apps Script Web App yang didapat setelah Deploy.
- * Konfigurasi di file .env: VITE_GOOGLE_APPS_SCRIPT_URL="https://script.google.com/macros/s/XXX/exec"
+ * URL Google Apps Script Web App.
+ * Dapat di-override melalui file .env: VITE_GOOGLE_APPS_SCRIPT_URL
  */
-const APPS_SCRIPT_URL = import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL || '';
+const DEFAULT_APPS_SCRIPT_URL =
+  'https://script.google.com/macros/s/AKfycbzTAeSx_AbO37PLeM0rxQ1oeSWro7O-9IvUe5faI64iQtQWHtJXMoZUWgC-bgK6PDbn/exec';
+
+const APPS_SCRIPT_URL =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GOOGLE_APPS_SCRIPT_URL) ||
+  DEFAULT_APPS_SCRIPT_URL;
 
 /**
  * Memeriksa apakah integrasi Google Sheets sudah dikonfigurasi
@@ -29,7 +35,7 @@ export async function submitOrderToSheets(
 ): Promise<AppsScriptResponse<{ orderId: string; totalPrice: number }>> {
   if (!isGoogleSheetsConfigured()) {
     console.warn(
-      '[GoogleSheets] VITE_GOOGLE_APPS_SCRIPT_URL belum diset di .env. Pesanan tidak terkirim ke Sheets.'
+      '[GoogleSheets] URL belum diset. Pesanan tidak terkirim ke Sheets.'
     );
     return {
       success: false,
@@ -58,15 +64,33 @@ export async function submitOrderToSheets(
       }),
     });
 
-    const result = (await response.json()) as AppsScriptResponse<{
-      orderId: string;
-      totalPrice: number;
-    }>;
+    const text = await response.text();
+    let result: AppsScriptResponse<{ orderId: string; totalPrice: number }>;
+    try {
+      result = JSON.parse(text);
+    } catch {
+      // Jika Google mengembalikan halaman login HTML
+      if (text.includes('ServiceLogin') || text.includes('accounts.google.com')) {
+        return {
+          success: false,
+          error:
+            'Akses Google Apps Script terkunci (harus diatur ke "Anyone / Siapa saja" di menu Deploy).',
+        };
+      }
+      return {
+        success: false,
+        error: 'Respons Google Apps Script tidak valid.',
+      };
+    }
+
     return result;
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal menghubungi Google Apps Script.',
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Gagal menghubungi Google Apps Script.',
     };
   }
 }
@@ -162,6 +186,59 @@ export async function fetchOrderStatusFromSheets(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Gagal mengambil status pesanan.',
+    };
+  }
+}
+
+/**
+ * Mengambil daftar seluruh pelanggan dari Google Sheets
+ */
+export async function fetchCustomersFromSheets(): Promise<AppsScriptResponse<Customer[]>> {
+  if (!isGoogleSheetsConfigured()) {
+    return {
+      success: false,
+      error: 'Google Sheets Web App URL belum dikonfigurasi di environment.',
+    };
+  }
+
+  try {
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=GET_CUSTOMERS`, {
+      method: 'GET',
+    });
+
+    return (await response.json()) as AppsScriptResponse<Customer[]>;
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal mengambil data pelanggan dari Google Sheets.',
+    };
+  }
+}
+
+/**
+ * Mencari data pelanggan berdasarkan nomor WhatsApp
+ */
+export async function fetchCustomerByPhoneFromSheets(
+  phone: string
+): Promise<AppsScriptResponse<Customer | null>> {
+  if (!isGoogleSheetsConfigured()) {
+    return {
+      success: false,
+      error: 'Google Sheets Web App URL belum dikonfigurasi di environment.',
+    };
+  }
+
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=GET_CUSTOMER_BY_PHONE&phone=${encodeURIComponent(phone)}`,
+      { method: 'GET' }
+    );
+
+    return (await response.json()) as AppsScriptResponse<Customer | null>;
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal mencari pelanggan di Google Sheets.',
     };
   }
 }
