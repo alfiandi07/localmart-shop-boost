@@ -149,7 +149,11 @@ export type CreateInquiryInput = z.infer<typeof CreateInquiryInputSchema>;
 // ----------------------------------------------------------------------------
 export type AppsScriptAction =
   | 'SETUP_DATABASE'
+  | 'SETUP_CUSTOMERS'
   | 'GET_PRODUCTS'
+  | 'GET_CUSTOMERS'
+  | 'GET_CUSTOMER_BY_PHONE'
+  | 'CREATE_CUSTOMER'
   | 'CREATE_ORDER'
   | 'GET_ORDER_STATUS'
   | 'CREATE_INQUIRY';
