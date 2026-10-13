@@ -5,6 +5,7 @@ import { faqs, products, WHATSAPP_URL } from '@/lib/storefront';
 import minisoccer from '@/assets/minisoccer.jpg';
 import futsal from '@/assets/futsal.jpg';
 import accessories from '@/assets/accessories.jpg';
+import logo from '@/assets/logo.png';
 
 const links = [['Produk', '#produk'], ['Keunggulan', '#keunggulan'], ['Tentang Kami', '#tentang'], ['FAQ', '#faq']] as const;
 const photos = [minisoccer, futsal, accessories];
@@ -15,7 +16,7 @@ export function WhatsAppButton({ children = 'Pesan via WhatsApp' }: { children?:
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
-  return <header className="navbar"><div className="container nav-inner"><a href="#" className="brand">LocalMart</a><nav aria-label="Navigasi utama" id="mobile-menu" className={`nav-links${open ? ' is-open' : ''}`}>{links.map(([label, href]) => <a key={href} href={href} onClick={() => setOpen(false)}>{label}</a>)}</nav><Button variant="ghost" size="icon" className="menu-toggle" aria-label={open ? 'Tutup menu' : 'Buka menu'} aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</Button></div></header>;
+  return <header className="navbar"><div className="container nav-inner"><a href="#" className="brand"><img src={logo} alt="LocalMart" className="brand-logo" /><span>LocalMart</span></a><nav aria-label="Navigasi utama" id="mobile-menu" className={`nav-links${open ? ' is-open' : ''}`}>{links.map(([label, href]) => <a key={href} href={href} onClick={() => setOpen(false)}>{label}</a>)}</nav><Button variant="ghost" size="icon" className="menu-toggle" aria-label={open ? 'Tutup menu' : 'Buka menu'} aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</Button></div></header>;
 }
 
 export function Hero() {
@@ -68,7 +69,7 @@ export function OrderForm() {
 }
 
 export function Footer() {
-  return <footer className="footer"><div className="container"><div className="footer-grid"><div><a className="brand" href="#">LocalMart</a><p>Penyedia sepatu futsal dan minisoccer pilihan untuk performa terbaik di lapangan. Lentur, ringan, dan nyaman dipakai.</p></div><div><h3>Kontak Kami</h3><div className="contact-list"><span className="contact-line"><MapPin size={18} /><span>Jl, Kemayoran Ketapang, Jakarta Pusat, Jakarta</span></span><a className="contact-line" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer"><Phone size={18} /><span>0896-5291-4049</span></a><span className="contact-line"><Instagram size={18} /><span>@Sportevo</span></span></div></div><div><h3>LocalMart</h3><nav className="footer-links" aria-label="Navigasi footer">{links.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</nav></div></div><div className="footer-bottom"><span>© 2026 LocalMart</span><span>Terimakasih Kak, ditunggu orderannya!</span></div></div></footer>;
+  return <footer className="footer"><div className="container"><div className="footer-grid"><div><a className="brand" href="#"><img src={logo} alt="LocalMart" className="brand-logo" /><span>LocalMart</span></a><p>Penyedia sepatu futsal dan minisoccer pilihan untuk performa terbaik di lapangan. Lentur, ringan, dan nyaman dipakai.</p></div><div><h3>Kontak Kami</h3><div className="contact-list"><span className="contact-line"><MapPin size={18} /><span>Jl, Kemayoran Ketapang, Jakarta Pusat, Jakarta</span></span><a className="contact-line" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer"><Phone size={18} /><span>0896-5291-4049</span></a><span className="contact-line"><Instagram size={18} /><span>@Sportevo</span></span></div></div><div><h3>LocalMart</h3><nav className="footer-links" aria-label="Navigasi footer">{links.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</nav></div></div><div className="footer-bottom"><span>© 2026 LocalMart</span><span>Terimakasih Kak, ditunggu orderannya!</span></div></div></footer>;
 }
 
 export function MobileWhatsApp() {
