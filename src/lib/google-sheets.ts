@@ -17,7 +17,7 @@ const DEFAULT_APPS_SCRIPT_URL =
   'https://script.google.com/macros/s/AKfycbzTAeSx_AbO37PLeM0rxQ1oeSWro7O-9IvUe5faI64iQtQWHtJXMoZUWgC-bgK6PDbn/exec';
 
 const APPS_SCRIPT_URL =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GOOGLE_APPS_SCRIPT_URL) ||
+  (typeof import.meta !== 'undefined' && (import.meta.env?.['VITE_GOOGLE_APPS_SCRIPT_URL'] as string | undefined)) ||
   DEFAULT_APPS_SCRIPT_URL;
 
 /**

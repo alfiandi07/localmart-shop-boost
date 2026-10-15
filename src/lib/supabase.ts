@@ -18,11 +18,11 @@ const DEFAULT_SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9teGFkeGtxbHZwdGx2cnV2aGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4Njk3MDcsImV4cCI6MjEwNzQ0NTcwN30.G1iiJInj5qMF2D-f4GNoxeiAEpXiKqpqWlHUcc-zAks';
 
 const SUPABASE_URL =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
+  (typeof import.meta !== 'undefined' && (import.meta.env?.['VITE_SUPABASE_URL'] as string | undefined)) ||
   DEFAULT_SUPABASE_URL;
 
 const SUPABASE_ANON_KEY =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
+  (typeof import.meta !== 'undefined' && (import.meta.env?.['VITE_SUPABASE_ANON_KEY'] as string | undefined)) ||
   DEFAULT_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

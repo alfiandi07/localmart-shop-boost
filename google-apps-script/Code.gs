@@ -118,6 +118,15 @@ function setupDatabase() {
   ];
   setupSheet(ss, SHEET_INQUIRIES, inquiryHeaders);
 
+  // 5. Setup Sheet: Katalog_Knowledge (jika knowledge.gs tersedia)
+  if (typeof setupKnowledgeSheet === "function") {
+    try {
+      setupKnowledgeSheet();
+    } catch (e) {
+      Logger.log("Info setupKnowledgeSheet: " + e.message);
+    }
+  }
+
   Logger.log("Berhasil menginisialisasi database LocalMart.");
 }
 
@@ -236,6 +245,24 @@ function doPost(e) {
     } else if (action === "SETUP_CUSTOMERS") {
       setupCustomersTable();
       result = { message: "Customers table setup completed successfully." };
+    } else if (action === "ASK_AI" || action === "CHAT_AI") {
+      if (typeof handleAiChat === "function") {
+        result = handleAiChat(payload);
+      } else {
+        throw new Error("Modul knowledge.gs belum terpasang di Google Apps Script.");
+      }
+    } else if (action === "GET_KNOWLEDGE") {
+      if (typeof getKnowledgeData === "function") {
+        result = getKnowledgeData();
+      } else {
+        throw new Error("Modul knowledge.gs belum terpasang di Google Apps Script.");
+      }
+    } else if (action === "SETUP_KNOWLEDGE") {
+      if (typeof setupKnowledgeSheet === "function") {
+        result = setupKnowledgeSheet();
+      } else {
+        throw new Error("Modul knowledge.gs belum terpasang di Google Apps Script.");
+      }
     } else {
       throw new Error("Action tidak dikenali: " + action);
     }
@@ -269,11 +296,28 @@ function doGet(e) {
       result = handleGetCustomerByPhone(params.phone);
     } else if (action === "GET_ORDER_STATUS") {
       result = handleGetOrderStatus(params.orderId || params.id);
+    } else if (action === "GET_KNOWLEDGE") {
+      if (typeof getKnowledgeData === "function") {
+        result = getKnowledgeData();
+      } else {
+        throw new Error("Modul knowledge.gs belum terpasang.");
+      }
+    } else if (action === "ASK_AI" || action === "CHAT_AI") {
+      if (typeof generateKnowledgeResponse === "function") {
+        var query = params.query || params.q || params.message || "";
+        result = {
+          query: query,
+          reply: generateKnowledgeResponse(query)
+        };
+      } else {
+        throw new Error("Modul knowledge.gs belum terpasang.");
+      }
     } else {
       result = {
         name: "LocalMart Google Sheets API",
-        version: "1.1.0",
+        version: "1.2.0",
         status: "ONLINE",
+        features: ["Orders", "Products", "Customers", "Inquiries", "Gemini_AI_Knowledge"],
         timestamp: new Date().toISOString()
       };
     }

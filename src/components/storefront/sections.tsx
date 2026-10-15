@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, CheckCircle2, ChevronDown, Feather, Instagram, Loader2, MapPin, Menu, MessageCircle, Minimize, Phone, ShieldCheck, X } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { ArrowRight, CheckCircle2, ChevronDown, Feather, Instagram, Loader2, MapPin, Menu, MessageCircle, Minimize, Phone, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { submitOrderToSheets } from '@/lib/google-sheets';
 import { submitOrderToSupabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -9,7 +10,13 @@ import futsal from '@/assets/futsal.jpg';
 import accessories from '@/assets/accessories.jpg';
 import logo from '@/assets/logo.png';
 
-const links = [['Produk', '#produk'], ['Keunggulan', '#keunggulan'], ['Tentang Kami', '#tentang'], ['FAQ', '#faq']] as const;
+const links = [
+  ['Produk', '#produk'],
+  ['Keunggulan', '#keunggulan'],
+  ['Tentang Kami', '#tentang'],
+  ['FAQ', '#faq'],
+  ['Tanya AI 🤖', '/chatbot'],
+] as const;
 const photos = [minisoccer, futsal, accessories];
 
 export function WhatsAppButton({ children = 'Pesan via WhatsApp' }: { children?: React.ReactNode }) {
@@ -127,7 +134,7 @@ export function OrderForm() {
           notes: notes || undefined,
         });
 
-        if (sheetsRes.success && sheetsRes.data) {
+        if (sheetsRes.success) {
           orderId = sheetsRes.data.orderId;
           isSuccess = true;
         } else {
@@ -292,3 +299,15 @@ export function Footer() {
 export function MobileWhatsApp() {
   return <div className="mobile-wa"><WhatsAppButton /></div>;
 }
+
+export function FloatingAIChatbot() {
+  return (
+    <Link to="/chatbot" className="floating-ai-launcher" aria-label="Tanya Chatbot AI Marty">
+      <span className="floating-ai-icon-pulse">
+        <Sparkles size={18} />
+      </span>
+      <span>Tanya AI Marty</span>
+    </Link>
+  );
+}
+

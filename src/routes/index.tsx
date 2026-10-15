@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { AboutSection, FAQSection, FeatureSection, Footer, Hero, MobileWhatsApp, Navbar, OrderForm, Products } from '@/components/storefront/sections';
+import { AboutSection, FAQSection, FeatureSection, FloatingAIChatbot, Footer, Hero, MobileWhatsApp, Navbar, OrderForm, Products } from '@/components/storefront/sections';
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
@@ -14,5 +14,21 @@ export const Route = createFileRoute('/')({
 });
 
 function Index() {
-  return <><Navbar /><main><Hero /><Products /><FeatureSection /><AboutSection /><FAQSection /><OrderForm /></main><Footer /><MobileWhatsApp /></>;
+  return (
+    <>
+      <Navbar />
+      <main>
+        <Hero />
+        <Products />
+        <FeatureSection />
+        <AboutSection />
+        <FAQSection />
+        <OrderForm />
+      </main>
+      <Footer />
+      <MobileWhatsApp />
+      <FloatingAIChatbot />
+    </>
+  );
 }
+
