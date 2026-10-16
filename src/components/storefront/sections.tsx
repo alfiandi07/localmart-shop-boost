@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { submitOrderToSheets } from '@/lib/google-sheets';
 import { submitOrderToSupabase, isSupabaseConfigured } from '@/lib/supabase';
 import { faqs, products, WHATSAPP_URL } from '@/lib/storefront';
+import { generateChatbotResponse, type ChatMessage } from '@/lib/chatbot-engine';
 import minisoccer from '@/assets/minisoccer.jpg';
 import futsal from '@/assets/futsal.jpg';
 import accessories from '@/assets/accessories.jpg';
@@ -15,7 +16,8 @@ const links = [
   ['Keunggulan', '#keunggulan'],
   ['Tentang Kami', '#tentang'],
   ['FAQ', '#faq'],
-  ['Tanya AI 🤖', '/chatbot'],
+  ['Tanya AI 🤖', '#tanya-ai'],
+  ['Halaman Chatbot', '/chatbot'],
 ] as const;
 const photos = [minisoccer, futsal, accessories];
 
@@ -29,7 +31,7 @@ export function Navbar() {
 }
 
 export function Hero() {
-  return <section className="hero"><div className="container"><h1>Gesit Terus, Main Makin Puas!</h1><p>Pilih sepatu futsal dan minisoccer terbaik dari LocalMart. Elastis, ringan, dan super nyaman di kaki Kakak. Terimakasih!</p><div className="hero-actions"><WhatsAppButton /><Button variant="collection" asChild><a href="#produk">Lihat Koleksi</a></Button></div></div></section>;
+  return <section className="hero"><div className="container"><h1>Temukan sepatu futsal dan minisoccer anda hanya di LocalMart</h1><p>Pilih sepatu futsal dan minisoccer terbaik dari LocalMart. Elastis, ringan, dan super nyaman di kaki Kakak. Terimakasih!</p><div className="hero-actions"><WhatsAppButton /><Button variant="collection" asChild><a href="#produk">Lihat Koleksi</a></Button></div></div></section>;
 }
 
 function SectionHeading({ title, subtitle }: { title: string; subtitle?: string }) {
@@ -65,6 +67,147 @@ function AccordionItem({ question, answer, index }: { question: string; answer: 
 
 export function FAQSection() {
   return <section className="section section-muted" id="faq"><div className="container"><SectionHeading title="Pertanyaan yang Sering Diajukan" /><div className="faq-list">{faqs.map(([question, answer], index) => <AccordionItem key={question} question={question} answer={answer} index={index} />)}</div></div></section>;
+}
+
+export function AIChatbotSection() {
+  const [query, setQuery] = useState('');
+  const [activeQuery, setActiveQuery] = useState('Ukuran 42 ready Kak?');
+  const [response, setResponse] = useState<ChatMessage | null>(() =>
+    generateChatbotResponse('ukuran 42 ready')
+  );
+  const [loading, setLoading] = useState(false);
+
+  const sampleQuestions = [
+    'Ukuran 42 ready Kak?',
+    'Sepatu apa yang cocok untuk rumput sintetis?',
+    'Rekomendasi sepatu futsal lantai vinyl/semen',
+    'Tips panduan ukuran untuk kaki lebar',
+    'Pengiriman instan ke Jakarta bisa hari ini?',
+  ];
+
+  const handleAsk = (q: string) => {
+    const text = q.trim();
+    if (!text || loading) return;
+    setLoading(true);
+    setActiveQuery(text);
+    setQuery(text);
+
+    setTimeout(() => {
+      const res = generateChatbotResponse(text);
+      setResponse(res);
+      setLoading(false);
+    }, 350);
+  };
+
+  return (
+    <section className="section section-ai" id="tanya-ai">
+      <div className="container">
+        <SectionHeading
+          title="Tanya Asisten AI LocalMart"
+          subtitle="Punya pertanyaan seputar ukuran, ketersediaan stok, rekomendasi jenis sepatu, atau pengiriman Jakarta? Tanyakan ke Amelia Mutya dan dapatkan jawaban instan."
+        />
+
+        <div className="ai-widget-card">
+          <div className="ai-widget-header">
+            <div className="ai-widget-persona">
+              <div className="ai-widget-avatar">
+                <img src={logo} alt="Amelia Mutya" />
+                <span className="chatbot-status-dot" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 className="ai-widget-name">Amelia Mutya</h3>
+                  <span className="chatbot-badge">AI Assistant</span>
+                </div>
+                <p className="ai-widget-desc">Siap menjawab pertanyaan seputar produk & stok 24/7</p>
+              </div>
+            </div>
+
+            <Link to="/chatbot" className="ai-widget-fullscreen-btn">
+              Buka Layar Penuh <ArrowRight size={15} />
+            </Link>
+          </div>
+
+          <div className="ai-widget-pills">
+            <span className="ai-pills-label">Pilih Pertanyaan Cepat:</span>
+            <div className="ai-pills-list">
+              {sampleQuestions.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  className={`ai-pill-btn${activeQuery === q ? ' is-active' : ''}`}
+                  onClick={() => handleAsk(q)}
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <form
+            className="ai-widget-input-row"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleAsk(query);
+            }}
+          >
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Ketik pertanyaan Kakak di sini (contoh: ukuran 42 ready Kak?)..."
+              className="ai-widget-input"
+            />
+            <Button type="submit" disabled={!query.trim() || loading} className="ai-widget-send-btn">
+              {loading ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
+              <span>{loading ? 'Menjawab...' : 'Tanya AI'}</span>
+            </Button>
+          </form>
+
+          {response && (
+            <div className="ai-widget-response-box">
+              <div className="ai-response-meta">
+                <span className="ai-response-badge">Jawaban Amelia Mutya:</span>
+                <span className="ai-response-time">{response.timestamp}</span>
+              </div>
+              <div className="ai-response-text">
+                {response.text.split('\n\n').map((para, i) => (
+                  <p key={i}>
+                    {para.split('\n').map((line, j) => (
+                      <span key={j}>
+                        {line}
+                        {j < para.split('\n').length - 1 && <br />}
+                      </span>
+                    ))}
+                  </p>
+                ))}
+              </div>
+
+              {response.actions && response.actions.length > 0 && (
+                <div className="ai-response-actions">
+                  {response.actions.map((act, i) => (
+                    <a
+                      key={i}
+                      href={act.value}
+                      target={act.type === 'wa' ? '_blank' : undefined}
+                      rel={act.type === 'wa' ? 'noopener noreferrer' : undefined}
+                      className={`chatbot-action-btn ${act.type === 'wa' ? 'wa-btn' : 'link-btn'}`}
+                    >
+                      <MessageCircle size={15} />
+                      {act.label}
+                    </a>
+                  ))}
+                  <Link to="/chatbot" className="chatbot-action-btn link-btn">
+                    Lanjut Ngobrol di Halaman Chatbot →
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 export function OrderForm() {
@@ -302,11 +445,11 @@ export function MobileWhatsApp() {
 
 export function FloatingAIChatbot() {
   return (
-    <Link to="/chatbot" className="floating-ai-launcher" aria-label="Tanya Chatbot AI Marty">
+    <Link to="/chatbot" className="floating-ai-launcher" aria-label="Tanya Chatbot AI Amelia Mutya">
       <span className="floating-ai-icon-pulse">
         <Sparkles size={18} />
       </span>
-      <span>Tanya AI Marty</span>
+      <span>Tanya AI Amelia Mutya</span>
     </Link>
   );
 }

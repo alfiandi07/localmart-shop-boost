@@ -106,7 +106,7 @@ export function ChatInterface() {
   };
 
   const handleResetChat = () => {
-    if (confirm('Mulai percakapan baru dengan Marty?')) {
+    if (confirm('Mulai percakapan baru dengan Amelia Mutya?')) {
       const welcome = getWelcomeMessage();
       setMessages([welcome]);
       if (typeof window !== 'undefined') {
@@ -167,7 +167,7 @@ export function ChatInterface() {
               </div>
               <div className="chatbot-header-info">
                 <div className="chatbot-title-row">
-                  <h1 className="chatbot-title">Marty</h1>
+                  <h1 className="chatbot-title">Amelia Mutya</h1>
                   <span className="chatbot-badge">AI Assistant</span>
                 </div>
                 <p className="chatbot-subtitle">Spesialis Sepatu Futsal & Minisoccer Jakarta</p>
@@ -232,7 +232,7 @@ export function ChatInterface() {
             >
               {msg.sender === 'bot' && (
                 <div className="bot-bubble-avatar">
-                  <img src={logo} alt="Marty" />
+                  <img src={logo} alt="Amelia Mutya" />
                 </div>
               )}
 
@@ -330,7 +330,7 @@ export function ChatInterface() {
           {isTyping && (
             <div className="chatbot-bubble-row is-bot">
               <div className="bot-bubble-avatar">
-                <img src={logo} alt="Marty" />
+                <img src={logo} alt="Amelia Mutya" />
               </div>
               <div className="chatbot-bubble-content">
                 <div className="chatbot-bubble is-typing-bubble">
@@ -339,7 +339,7 @@ export function ChatInterface() {
                     <span />
                     <span />
                   </div>
-                  <span className="typing-text">Marty sedang mengetik...</span>
+                  <span className="typing-text">Amelia Mutya sedang mengetik...</span>
                 </div>
               </div>
             </div>
@@ -382,7 +382,7 @@ export function ChatInterface() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Tanya Marty tentang sepatu, ukuran, atau pengiriman..."
+              placeholder="Tanya Amelia Mutya tentang sepatu, ukuran, atau pengiriman..."
               className="chatbot-input-textarea"
             />
 

@@ -8,7 +8,7 @@ export const Route = createFileRoute('/chatbot')({
       {
         name: 'description',
         content:
-          'Konsultasi gratis dengan Marty, Asisten AI resmi LocalMart Jakarta. Dapatkan rekomendasi sepatu futsal, minisoccer, panduan ukuran, cek ongkir, dan status pesanan.',
+          'Konsultasi gratis dengan Amelia Mutya, Asisten AI resmi LocalMart Jakarta. Dapatkan rekomendasi sepatu futsal, minisoccer, panduan ukuran, cek ongkir, dan status pesanan.',
       },
       { property: 'og:title', content: 'Chatbot AI LocalMart — Asisten Belanja Sepatu Olahraga' },
       {

@@ -99,7 +99,7 @@ export function getWelcomeMessage(): ChatMessage {
   return {
     id: 'welcome-msg',
     sender: 'bot',
-    text: `Halo Kak! Selamat datang di **LocalMart** ⚽👟\n\nSaya **Marty**, asisten AI resmi LocalMart. Saya siap membantu Kakak memilih sepatu futsal & minisoccer terbaik, mengecek ukuran kaki, info pengiriman Jakarta, hingga status pesanan.\n\nAda yang bisa Marty bantu hari ini Kak?`,
+    text: `Halo Kak! Selamat datang di **LocalMart** ⚽👟\n\nSaya **Amelia Mutya**, asisten AI resmi LocalMart. Saya siap membantu Kakak memilih sepatu futsal & minisoccer terbaik, mengecek ukuran kaki, info pengiriman Jakarta, hingga status pesanan.\n\nAda yang bisa Amelia Mutya bantu hari ini Kak?`,
     timestamp: formatCurrentTime(),
     quickReplies: [
       'Rekomendasi Minisoccer',
@@ -212,7 +212,39 @@ export function generateChatbotResponse(rawInput: string): ChatMessage {
     };
   }
 
-  // 4. SIZE GUIDE & KAKI LEBAR
+  // 4A. KHUSUS PERTANYAAN UKURAN 42 / READY STOCK
+  if (
+    query.includes('42') ||
+    (query.includes('ready') && (query.includes('ukuran') || query.includes('stok') || query.includes('size')))
+  ) {
+    const is42 = query.includes('42');
+    const sizeLabel = is42 ? 'Ukuran 42' : 'Pilihan Ukuran (39 - 44)';
+
+    return {
+      id,
+      sender: 'bot',
+      text: `Kabar gembira Kak! Untuk **${sizeLabel}** saat ini **READY STOCK LENGKAP** di LocalMart! 🙏⚽\n\nBerikut pilihan model sepatu andalan kami yang siap kirim:\n\n👟 **1. Sepatu Minisoccer Aerion** — **Rp 210.000**\n• Sol bergerigi (Turf / TF), sangat lentur & anti-selip di rumput sintetis.\n• Upper empuk tidak bikin lecet dan ramah untuk kaki lebar.\n\n⚡ **2. Sepatu Futsal Aerion** — **Rp 190.000**\n• Sol karet datar non-marking, daya cengkeram mantap di lantai vinyl / semen halus.\n• Bantalan tumit empuk meredam hentakan, main puas tanpa pegal.\n\nUkuran 42 memiliki panjang insole sekitar **26.5 cm**. Kakak berminat untuk sepatu minisoccer atau futsal? Kami siap kirim hari ini ke seluruh Jakarta!`,
+      timestamp: timeStr,
+      products: [CATALOG_PRODUCTS.minisoccer, CATALOG_PRODUCTS.futsal],
+      quickReplies: ['Pesan Minisoccer uk. 42', 'Pesan Futsal uk. 42', 'Cek Ongkir Jakarta', 'Tanya via WhatsApp'],
+      actions: [
+        {
+          label: 'Pesan Minisoccer uk. 42 via WA',
+          type: 'wa',
+          value: `https://wa.me/6289652914048?text=${encodeURIComponent('Halo LocalMart, saya mau pesan Sepatu Minisoccer Aerion ukuran 42 (Rp 210.000). Mohon diproses ya Kak.')}`,
+          variant: 'whatsapp',
+        },
+        {
+          label: 'Pesan Futsal uk. 42 via WA',
+          type: 'wa',
+          value: `https://wa.me/6289652914048?text=${encodeURIComponent('Halo LocalMart, saya mau pesan Sepatu Futsal Aerion ukuran 42 (Rp 190.000). Mohon diproses ya Kak.')}`,
+          variant: 'whatsapp',
+        },
+      ],
+    };
+  }
+
+  // 4B. SIZE GUIDE & KAKI LEBAR
   if (
     query.includes('ukuran') ||
     query.includes('size') ||
@@ -227,7 +259,7 @@ export function generateChatbotResponse(rawInput: string): ChatMessage {
     return {
       id,
       sender: 'bot',
-      text: `📏 **Panduan Ukuran Sepatu & Tips Kaki Lebar (Wide Foot)**\n\nSepatu LocalMart dirancang dengan bahan upper sintetis elastis yang fleksibel mengikuti lekuk kaki Kakak.\n\n💡 **Tips Memilih Ukuran:**\n1. **Kaki Standar / Ramping:** Pilih ukuran yang biasa Kakak kenakan (*true to size*).\n2. **Kaki Lebar (Wide Foot):** Karena material kami sangat lentur, sepatu tetap nyaman dipakai. Namun jika Kakak terbiasa memakai kaos kaki futsal yang tebal, Marty merekomendasikan **naik 1 nomor (upsize 1 size)** agar jempol lebih leluasa.\n3. **Konsultasi Langsung:** Masih ragu? Kakak bisa ukur panjang telapak kaki dari tumit ke jempol lalu chat kami.`,
+      text: `📏 **Panduan Ukuran Sepatu & Tips Kaki Lebar (Wide Foot)**\n\nSepatu LocalMart dirancang dengan bahan upper sintetis elastis yang fleksibel mengikuti lekuk kaki Kakak.\n\n💡 **Tips Memilih Ukuran:**\n1. **Kaki Standar / Ramping:** Pilih ukuran yang biasa Kakak kenakan (*true to size*).\n2. **Kaki Lebar (Wide Foot):** Karena material kami sangat lentur, sepatu tetap nyaman dipakai. Namun jika Kakak terbiasa memakai kaos kaki futsal yang tebal, Amelia Mutya merekomendasikan **naik 1 nomor (upsize 1 size)** agar jempol lebih leluasa.\n3. **Konsultasi Langsung:** Masih ragu? Kakak bisa ukur panjang telapak kaki dari tumit ke jempol lalu chat kami.`,
       timestamp: timeStr,
       tableData: SIZE_CHART,
       quickReplies: ['Pilih Minisoccer (Rp 210k)', 'Pilih Futsal (Rp 190k)', 'Tanya via WhatsApp'],
@@ -373,7 +405,7 @@ export function generateChatbotResponse(rawInput: string): ChatMessage {
     return {
       id,
       sender: 'bot',
-      text: `Halo Kak! Senang bisa menyapa Kakak. Selamat datang di **LocalMart**! ⚽\n\nMarty siap membantu Kakak menemukan sepatu futsal & minisoccer terbaik yang enteng, lentur, dan anti-lecet di kaki.\n\nApa yang sedang Kakak cari hari ini?`,
+      text: `Halo Kak! Senang bisa menyapa Kakak. Selamat datang di **LocalMart**! ⚽\n\nAmelia Mutya siap membantu Kakak menemukan sepatu futsal & minisoccer terbaik yang enteng, lentur, dan anti-lecet di kaki.\n\nApa yang sedang Kakak cari hari ini?`,
       timestamp: timeStr,
       quickReplies: [
         'Sepatu Minisoccer (Rumput)',
@@ -434,7 +466,7 @@ export function generateChatbotResponse(rawInput: string): ChatMessage {
   return {
     id,
     sender: 'bot',
-    text: `Terima kasih atas pertanyaannya Kak! 😊\n\nTerkait: *" ${rawInput} "*\n\nMarty bisa bantu memberikan rekomendasi sepatu futsal atau minisoccer yang tepat, info ukuran yang pas untuk kaki Kakak, estimasi ongkir ke wilayah Jakarta, atau mencatat pesanan.\n\nSilakan pilih topik cepat di bawah ini atau hubungi admin WhatsApp kami secara langsung:`,
+    text: `Terima kasih atas pertanyaannya Kak! 😊\n\nTerkait: *" ${rawInput} "*\n\nAmelia Mutya bisa bantu memberikan rekomendasi sepatu futsal atau minisoccer yang tepat, info ukuran yang pas untuk kaki Kakak, estimasi ongkir ke wilayah Jakarta, atau mencatat pesanan.\n\nSilakan pilih topik cepat di bawah ini atau hubungi admin WhatsApp kami secara langsung:`,
     timestamp: timeStr,
     quickReplies: [
       'Rekomendasi Sepatu Minisoccer',
